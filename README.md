@@ -5,4 +5,5 @@ This project consists of 3 main parts:
 2- Flight control system runs on Atmega2560   
 3- server-client TCP/ip communication between Raspberry pi above the copter and the PC
 
-      This Repository is not uploded with all files and materials yet 
+https://github.com/AlhasanAlkhatib/keras-yolo3  click on this link to review the yolo object detection and TCP/IP codes
+
