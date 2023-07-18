@@ -99,32 +99,12 @@ int Bat_analog_value;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 void setup() {
-   delay(1000);
-   delay(1000);
-   delay(1000);
-   delay(1000);
-   delay(1000);
-   delay(1000);
-   delay(1000);
-   delay(1000);
-   delay(1000);
-   delay(1000);
-   delay(1000);
-   delay(1000);
-   delay(1000);
-   delay(1000);
-   delay(1000);
-
-
-
-
+  delay(15000);
   Serial.begin(115200);
 
   /*Emergency button*/
   pinMode(interrupt_Pin, INPUT);
   attachInterrupt(digitalPinToInterrupt(interrupt_Pin), Emergency_button, FALLING); // trigger for when the pin goes from high to low.
-
-
 
   /*Ultrasonic*/
   pinMode(trigPin, OUTPUT);
@@ -171,113 +151,110 @@ void setup() {
 
   delay(1000);
 
-
   t1 = micros();
   t2 = micros();
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void loop()
 {
-  loop_time = (t2 - t1) / 1000000.0;  // in second
-  t1 = micros();  // actual time read
-
-  time_test = loop_time;
-  loop_full_test += time_test;                 // for Emergancy mode
-
-
-  if (Serial.available()) // Chek for availablity of data at Serial Port
-  {
-    data[0] = Serial.read();
-    data[1] = Serial.read();
-    data[2] = Serial.read();
-  }
-  set_desired_values();                                               //Set desired values that determined from RP3 serial port
-  MPU_read();                                                         // Read Gyro and Acc values
-  
-  //Ultrasonic_read();
-  //HMC5883_read();
-  Serial.print(loop_time * 1000);     Serial.print("  ");
-  Serial.print( Acceleration_angle[0]);     Serial.print("  ");
-  Serial.print( Acceleration_angle[1]);     Serial.print("  ");
-  /*Serial.print( Total_angle[0]);     Serial.print("  ");
-  Serial.print( Total_angle[1]);     Serial.print("  ");
-  Serial.print(distanceCm);         Serial.print("  ");*/
-  
-  if (mean(Ultrasonic_buffer, 10) >= 2000) {
-    Serial.println(" Warrnnig !! ");
-      desired_altitude = 1;                                        //**************************************************************************
-  }
-  if (loop_full_test < 15) {
-      desired_altitude = 90;                                        //**************************************************************************
-  }
-   else {
-      desired_altitude = 1;         //**************************************************************************
-     // Serial.print(" STOOOOOOOOOOOOOOP !! ");   
-  }
-  
-    PID_GAIN_Calculate();
-      
-    if (Throttle > 1600)Throttle = 1600;
-    if (Throttle < 1100)Throttle = 1100;
-    
-    Throttle = 1200;                                           //**********************/*******************************************************
-    /*Serial.print(Throttle);  Serial.print("  ");*/
-    //PID_yaw=0;
-    //PID_pitch=0;
-    //PID_roll=0;
-    ESC_PWM_1 = Throttle + PID_pitch - PID_roll - PID_yaw;
-    ESC_PWM_2 = Throttle + PID_pitch + PID_roll + PID_yaw;
-    ESC_PWM_3 = Throttle - PID_pitch + PID_roll - PID_yaw;
-    ESC_PWM_4 = Throttle - PID_pitch - PID_roll + PID_yaw;
-
-    /*Bat drop*/
-   /* Bat_analog_value = analogRead(A5);
-    Bat_drop = 5 * Bat_analog_value / 1024.0;
-    Bat_drop = 3.225*Bat_drop;     //Gerlilim bolucu ile 3,225 oranı  
-    if (Bat_drop<10.5)Bat_drop=10.5;
-    if (Bat_drop>12.6)Bat_drop=12.6;
-    //Serial.print(Bat_drop);         Serial.print("  ");*/
-    Bat_drop=11.7;                                                      ///***********************************************************************************
-    Bat_drop = 12.6 / Bat_drop;
-    ESC_PWM_1 = ESC_PWM_1*Bat_drop;
-    ESC_PWM_2 = ESC_PWM_2*Bat_drop;
-    ESC_PWM_3 = ESC_PWM_3*Bat_drop;
-    ESC_PWM_4 = ESC_PWM_4*Bat_drop;
-    
-    if (ESC_PWM_1 > 1800)ESC_PWM_1 = 1800;
-    if (ESC_PWM_1 < 1100)ESC_PWM_1 = 1100;
-
-    if (ESC_PWM_2 > 1800)ESC_PWM_2 = 1800;
-    if (ESC_PWM_2 < 1100)ESC_PWM_2 = 1100;
-
-    if (ESC_PWM_3 > 1800)ESC_PWM_3 = 1800;
-    if (ESC_PWM_3 < 1100)ESC_PWM_3 = 1100;
-
-    if (ESC_PWM_4 > 1800)ESC_PWM_4 = 1800;
-    if (ESC_PWM_4 < 1100)ESC_PWM_4 = 1100;
-
-    
+   loop_time = (t2 - t1) / 1000000.0;  // in second
+   t1 = micros();  // actual time read
    
-  if(Emergaecy_stop_flag || loop_full_test > 30) {
-    R_B_MOTOR.writeMicroseconds(0);
-    R_F_MOTOR.writeMicroseconds(0);
-    L_F_MOTOR.writeMicroseconds(0);
-    L_B_MOTOR.writeMicroseconds(0);  
-    //Serial.print("STOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOP ABIIIIIIIIIIII  ");  
-  }
-  else{
-    Serial.print(ESC_PWM_1);         Serial.print("  ");
-    Serial.print(ESC_PWM_2);         Serial.print("  ");
-    Serial.print(ESC_PWM_3);         Serial.print("  ");
-    Serial.print(ESC_PWM_4);         Serial.print("  ");
-    R_B_MOTOR.writeMicroseconds(ESC_PWM_1);
-    R_F_MOTOR.writeMicroseconds(ESC_PWM_2);
-    L_F_MOTOR.writeMicroseconds(ESC_PWM_3);
-    L_B_MOTOR.writeMicroseconds(ESC_PWM_4);
-  }
-  Serial.println("  ");
-  while(micros() - t1 < 4000);                                 //Wait until the loop_timer reaches 4000us (250Hz) before starting the next loop
-  t2 = micros();  // actual time read
+   time_test = loop_time;
+   loop_full_test += time_test;                 // for Emergancy mode
+   
+   if (Serial.available()) // Chek for availablity of data at Serial Port
+   {
+      data[0] = Serial.read();
+      data[1] = Serial.read();
+      data[2] = Serial.read();
+   }
+   set_desired_values();                                               //Set desired values that determined from RP3 serial port
+   MPU_read();                                                         // Read Gyro and Acc values
+   
+   //Ultrasonic_read();
+   //HMC5883_read();
+   Serial.print(loop_time * 1000);     Serial.print("  ");
+   Serial.print( Acceleration_angle[0]);     Serial.print("  ");
+   Serial.print( Acceleration_angle[1]);     Serial.print("  ");
+   /*Serial.print( Total_angle[0]);     Serial.print("  ");
+   Serial.print( Total_angle[1]);     Serial.print("  ");
+   Serial.print(distanceCm);         Serial.print("  ");*/
+   
+   if (mean(Ultrasonic_buffer, 10) >= 2000) {
+      Serial.println(" Warrnnig !! ");
+      desired_altitude = 1;
+   }
+   if (loop_full_test < 15) {
+      desired_altitude = 90;
+   }
+   else {
+      desired_altitude = 1;
+      //Serial.print(" STOOOOOOOOOOOOOOP !! ");   
+   }
+   
+   PID_GAIN_Calculate();
+   
+   if (Throttle > 1600)Throttle = 1600;
+   if (Throttle < 1100)Throttle = 1100;
+   
+   Throttle = 1200;
+   /*Serial.print(Throttle);  Serial.print("  ");*/
+   //PID_yaw=0;
+   //PID_pitch=0;
+   //PID_roll=0;
+   ESC_PWM_1 = Throttle + PID_pitch - PID_roll - PID_yaw;
+   ESC_PWM_2 = Throttle + PID_pitch + PID_roll + PID_yaw;
+   ESC_PWM_3 = Throttle - PID_pitch + PID_roll - PID_yaw;
+   ESC_PWM_4 = Throttle - PID_pitch - PID_roll + PID_yaw;
+   
+   /*Bat drop*/
+   /* Bat_analog_value = analogRead(A5);
+   Bat_drop = 5 * Bat_analog_value / 1024.0;
+   Bat_drop = 3.225*Bat_drop;     //Gerlilim bolucu ile 3,225 oranı  
+   if (Bat_drop<10.5)Bat_drop=10.5;
+   if (Bat_drop>12.6)Bat_drop=12.6;
+   //Serial.print(Bat_drop);         Serial.print("  ");*/
+   Bat_drop=11.7;
+   Bat_drop = 12.6 / Bat_drop;
+   ESC_PWM_1 = ESC_PWM_1*Bat_drop;
+   ESC_PWM_2 = ESC_PWM_2*Bat_drop;
+   ESC_PWM_3 = ESC_PWM_3*Bat_drop;
+   ESC_PWM_4 = ESC_PWM_4*Bat_drop;
+   
+   if (ESC_PWM_1 > 1800)ESC_PWM_1 = 1800;
+   if (ESC_PWM_1 < 1100)ESC_PWM_1 = 1100;
+   
+   if (ESC_PWM_2 > 1800)ESC_PWM_2 = 1800;
+   if (ESC_PWM_2 < 1100)ESC_PWM_2 = 1100;
+   
+   if (ESC_PWM_3 > 1800)ESC_PWM_3 = 1800;
+   if (ESC_PWM_3 < 1100)ESC_PWM_3 = 1100;
+   
+   if (ESC_PWM_4 > 1800)ESC_PWM_4 = 1800;
+   if (ESC_PWM_4 < 1100)ESC_PWM_4 = 1100;
+   
+   if(Emergaecy_stop_flag || loop_full_test > 30) {
+      R_B_MOTOR.writeMicroseconds(0);
+      R_F_MOTOR.writeMicroseconds(0);
+      L_F_MOTOR.writeMicroseconds(0);
+      L_B_MOTOR.writeMicroseconds(0);  
+      //Serial.print("STOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOP ABIIIIIIIIIIII  ");  
+   }
+   else{
+      Serial.print(ESC_PWM_1);         Serial.print("  ");
+      Serial.print(ESC_PWM_2);         Serial.print("  ");
+      Serial.print(ESC_PWM_3);         Serial.print("  ");
+      Serial.print(ESC_PWM_4);         Serial.print("  ");
+      R_B_MOTOR.writeMicroseconds(ESC_PWM_1);
+      R_F_MOTOR.writeMicroseconds(ESC_PWM_2);
+      L_F_MOTOR.writeMicroseconds(ESC_PWM_3);
+      L_B_MOTOR.writeMicroseconds(ESC_PWM_4);
+   }
+   
+   //Serial.println("  ");
+   while(micros() - t1 < 4000);                                 //Wait until the loop_timer reaches 4000us (250Hz) before starting the next loop
+   t2 = micros();  // actual time read
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void Emergency_button() {
@@ -302,8 +279,6 @@ void PID_GAIN_Calculate() {
   Throttle = 1100 + P_altitude + I_altitude + D_altitude;
   error_altitude_prev = error_altitude;
   
-
-///////////////////////////////////////////
   error_pitch = desired_pitch - gyro_pitch_input;
   P_pitch = Kp_pitch * error_pitch;
   I_pitch = I_pitch + Ki_pitch * error_pitch;
@@ -316,37 +291,45 @@ void PID_GAIN_Calculate() {
   if(PID_pitch<-400)PID_pitch=-400;
   error_pitch_prev = error_pitch;
     
-//////////////////////////////////////////
   error_roll = desired_roll - gyro_roll_input;
   P_roll = Kp_roll * error_roll;
   I_roll = I_roll + Ki_roll * error_roll;
   D_roll = Kd_roll * ((error_roll - error_roll_prev));
  
   if(I_roll>400)I_roll=400;
+   
   if(I_roll<-400)I_roll=-400;
+   
   PID_roll = P_roll + I_roll + D_roll;
+   
   if(PID_roll>400)PID_roll=400;
+   
   if(PID_roll<-400)PID_roll=-400;
+   
   error_roll_prev = error_roll;
 
-//////////////////////////////////////////
-  error_yaw = desired_yaw - gyro_yaw_input;                      /////////!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! dikkat isareti eski haline getirmeyi unutma
+  error_yaw = desired_yaw - gyro_yaw_input; //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! what about the minus ???
   P_yaw = Kp_yaw * error_yaw;
   I_yaw = I_yaw + Ki_yaw * error_yaw;
   D_yaw = Kd_yaw * ((error_yaw - error_yaw_prev));
  
   if(I_yaw>400)I_yaw=400;
   if(I_yaw<-400)I_yaw=-400;
-   PID_yaw = P_yaw + I_yaw + D_yaw;
-   if(PID_yaw>400)PID_yaw=400;
-   if(PID_yaw<-400)PID_yaw=-400;
-   error_yaw_prev = error_yaw;
+   
+  PID_yaw = P_yaw + I_yaw + D_yaw;
+   
+  if(PID_yaw>400)PID_yaw=400;
+  if(PID_yaw<-400)PID_yaw=-400;
+  
+  error_yaw_prev = error_yaw;
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void set_desired_values() {
+   
   if (data[0] == 'U' || data[1] == 'U' || data[2] == 'U') { //UP 
     if (Throttle>= 1600)Throttle=1600;
     else Throttle += 10;
+     
     desired_pitch = 0;
     desired_roll = 0;
     desired_yaw = 0;
@@ -354,11 +337,13 @@ void set_desired_values() {
   else if (data[0] == 'D' || data[1] == 'D' || data[2] == 'D') { //Down
     if (Throttle<= 100)Throttle=100;
     else Throttle -= 10;
+     
     desired_pitch = 0;
     desired_roll = 0;
     desired_yaw = 0;
   }
     else if (data[0] == 'F' || data[1] == 'F' || data[2] == 'F') { //forward
+       
     desired_pitch = 0;
     desired_roll = 10;
     desired_yaw = 0;
@@ -404,7 +389,6 @@ void HMC5883_read() {
   y = (int16_t)(yl | ((int16_t)yh << 8));
   z = (int16_t)(zl | ((int16_t)zh << 8));
 
-
   // Sakarya'nin manyetik sapması 5 derece, 42' --> yaklasık olarak 0,1003 radyan
 
   H1 = atan2(y, x);
@@ -415,21 +399,21 @@ void HMC5883_read() {
 
   //the return value is H1
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void Ultrasonic_read() {
 
+void Ultrasonic_read() {
   digitalWrite(trigPin, LOW);
   delayMicroseconds(2);
   digitalWrite(trigPin, HIGH);
   delayMicroseconds(10);
   digitalWrite(trigPin, LOW);
+   
   duration = pulseIn(echoPin, HIGH);
   distanceCm = duration * 0.034 / 2;
   Ultrasonic_buffer[counter_Ultrasonic_buffer++] = distanceCm;
+   
   if (counter_Ultrasonic_buffer == 50)counter_Ultrasonic_buffer = 0;
-
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 int mean(int *matrix, int mlength) {
   int sum = 0;
   for (int i = 0; i < mlength; i++) {
@@ -437,7 +421,7 @@ int mean(int *matrix, int mlength) {
   }
   return sum / mlength;
 }
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void MPU_read()
 {
   // 8g ---> must divide by 4096
@@ -479,55 +463,49 @@ void MPU_read()
   Total_angle[1] = 0.9*(Total_angle[1]) + 0.1 * Gyro_angle[1];
   /*---YAW---*/
   Total_angle[2] = 0.9*(Total_angle[2]) + 0.1 * Gyro_angle[2];
-
-
 }
-
-////////////////////////////////////////////////////////////////////////////////////////////
 
 void calibrate_baslangic_hatasi() {
 
    //Now in order to obtain the gyro data in degrees/seconda we have to divide first
    //the raw value by 131 because that's the value that the datasheet gives us
-  for (int i = 0; i < 2000; i++) {
-    Gx = GyroX(ChipSelPin1);
-    Gy = GyroY(ChipSelPin1);
-    Gz = GyroZ(ChipSelPin1);
-    Gyro_angle[0] += Gx;
-    Gyro_angle[1] += Gy;
-    Gyro_angle[2] += Gz;
-  }
-  
-  for (int i = 0; i < 200; i++) {
-     Ax = AcceX(ChipSelPin1)/4096.0;
-     Ay = AcceY(ChipSelPin1)/4096.0;
-     Az = AcceZ(ChipSelPin1)/4096.0;
-     Acceleration_angle[0] += Ax ;
-     Acceleration_angle[1] += Ay ;
-     Acceleration_angle[2] += Az ;
-  }
+   for (int i = 0; i < 2000; i++) {
+      Gx = GyroX(ChipSelPin1);
+      Gy = GyroY(ChipSelPin1);
+      Gz = GyroZ(ChipSelPin1);
+      Gyro_angle[0] += Gx;
+      Gyro_angle[1] += Gy;
+      Gyro_angle[2] += Gz;
+   }
    
-     Acceleration_angle[0]=Acceleration_angle[0]/200;
-     Acceleration_angle[1]=Acceleration_angle[1]/200;
-     Acceleration_angle[2]=Acceleration_angle[2]/200;
-     acc_error_x  = atan( Acceleration_angle[1] / sqrt(pow(( Acceleration_angle[0]), 2) + pow(( Acceleration_angle[2]), 2)))*rad_to_deg ;
-     acc_error_y = atan(-1 * ( Acceleration_angle[0]) / sqrt(pow(( Acceleration_angle[1]), 2) + pow(( Acceleration_angle[2]), 2)))*rad_to_deg;
+   for (int i = 0; i < 200; i++) {
+      Ax = AcceX(ChipSelPin1)/4096.0;
+      Ay = AcceY(ChipSelPin1)/4096.0;
+      Az = AcceZ(ChipSelPin1)/4096.0;
+      Acceleration_angle[0] += Ax ;
+      Acceleration_angle[1] += Ay ;
+      Acceleration_angle[2] += Az ;
+   }
 
-      
-     Gyro_error_x = Gyro_angle[0] / 2000;
-     Gyro_error_y = Gyro_angle[1] / 2000;
-     Gyro_error_z = Gyro_angle[2] / 2000;
-     
-     Gyro_angle[0] = 0;
-     Gyro_angle[1] = 0;
-     Gyro_angle[2] = 0;
-     Acceleration_angle[0] = 0 ;
-     
-     Acceleration_angle[1] = 0 ;
-     Acceleration_angle[2] = 0 ;
-
+   Acceleration_angle[0]=Acceleration_angle[0]/200;
+   Acceleration_angle[1]=Acceleration_angle[1]/200;
+   Acceleration_angle[2]=Acceleration_angle[2]/200;
+   acc_error_x  = atan( Acceleration_angle[1] / sqrt(pow(( Acceleration_angle[0]), 2) + pow(( Acceleration_angle[2]), 2)))*rad_to_deg ;
+   acc_error_y = atan(-1 * ( Acceleration_angle[0]) / sqrt(pow(( Acceleration_angle[1]), 2) + pow(( Acceleration_angle[2]), 2)))*rad_to_deg;
+   
+   Gyro_error_x = Gyro_angle[0] / 2000;
+   Gyro_error_y = Gyro_angle[1] / 2000;
+   Gyro_error_z = Gyro_angle[2] / 2000;
+   
+   Gyro_angle[0] = 0;
+   Gyro_angle[1] = 0;
+   Gyro_angle[2] = 0;
+   Acceleration_angle[0] = 0 ;
+   
+   Acceleration_angle[1] = 0 ;
+   Acceleration_angle[2] = 0 ;
 }
-///////////////////////////////////////////////////////////////////////////////////////////
+
 void SPIwrite(byte reg, byte data, int ChipSelPin) {
   uint8_t dump;
   digitalWrite(ChipSelPin, LOW);
@@ -535,7 +513,7 @@ void SPIwrite(byte reg, byte data, int ChipSelPin) {
   dump = SPI.transfer(data);
   digitalWrite(ChipSelPin, HIGH);
 }
-////////////////////////////////////////////////////////////////////////////////////////////////
+
 uint8_t SPIread(byte reg, int ChipSelPin) {
   uint8_t dump;
   uint8_t return_value;
@@ -546,49 +524,49 @@ uint8_t SPIread(byte reg, int ChipSelPin) {
   digitalWrite(ChipSelPin, HIGH);
   return(return_value);
 }
-/////////////////////////////////////////////////////////////////////////////////////////////////
+
 int AcceX(int ChipSelPin) {
   uint8_t AcceX_H = SPIread(0x3B, ChipSelPin);
   uint8_t AcceX_L = SPIread(0x3C, ChipSelPin);
   int16_t AcceX = AcceX_H << 8 | AcceX_L;
   return(AcceX);
 }
-///////////////////////////////////////////////////////////////////////////////////////////////////
+
 int AcceY(int ChipSelPin) {
   uint8_t AcceY_H = SPIread(0x3D, ChipSelPin);
   uint8_t AcceY_L = SPIread(0x3E, ChipSelPin);
   int16_t AcceY = AcceY_H << 8 | AcceY_L;
   return(AcceY);
 }
-/////////////////////////////////////////////////////////////////////////////////////////////////////
+
 int AcceZ(int ChipSelPin) {
   uint8_t AcceZ_H = SPIread(0x3F, ChipSelPin);
   uint8_t AcceZ_L = SPIread(0x40, ChipSelPin);
   int16_t AcceZ = AcceZ_H << 8 | AcceZ_L;
   return(AcceZ);
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////////
+
 int GyroX(int ChipSelPin) {
   uint8_t GyroX_H = SPIread(0x43, ChipSelPin);
   uint8_t GyroX_L = SPIread(0x44, ChipSelPin);
   int16_t GyroX = GyroX_H << 8 | GyroX_L;
   return(GyroX);
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////////
+
 int GyroY(int ChipSelPin) {
   uint8_t GyroY_H = SPIread(0x45, ChipSelPin);
   uint8_t GyroY_L = SPIread(0x46, ChipSelPin);
   int16_t GyroY = GyroY_H << 8 | GyroY_L;
   return(GyroY);
 }
-///////////////////////////////////////////////////////////////////////////////////////////////////////
+
 int GyroZ(int ChipSelPin) {
   uint8_t GyroZ_H = SPIread(0x47, ChipSelPin);
   uint8_t GyroZ_L = SPIread(0x48, ChipSelPin);
   int16_t GyroZ = GyroZ_H << 8 | GyroZ_L;
   return(GyroZ);
 }
-////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void ConfigureMPU6000()
 {
   // DEVICE_RESET @ PWR_MGMT_1, reset device
